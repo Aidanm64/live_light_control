@@ -35,6 +35,10 @@ def run():
         intensity = int(map_range(bpm, 60, 300, 100, 255))
         controller.set_global_intensity(intensity, ms=2000)
 
+
+    def print_spectral_features(features):
+        print(f'rms: {features.rms}, centroid: {features.centroid}, flatness: {features.flatness}')
+
     analysis.key_source.subscribe(
         on_next=key_to_room_color,
         on_completed=lambda *args: None,
@@ -42,6 +46,11 @@ def run():
 
     analysis.bpm_source.subscribe(
         on_next=bpm_to_brigtness,
+        on_completed=lambda *args: None,
+        on_error=lambda error: print(error))
+
+    analysis.spectral_feature_source.subscribe(
+        on_next=print_spectral_features,
         on_completed=lambda *args: None,
         on_error=lambda error: print(error))
 

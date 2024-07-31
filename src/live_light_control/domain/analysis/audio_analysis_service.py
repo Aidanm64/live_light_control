@@ -6,6 +6,8 @@ from reactivex.scheduler import ThreadPoolScheduler
 from reactivex import operators as ops
 import reactivex as rx
 
+from live_light_control.domain.analysis.spectral_analyzer import SpectralAnalyzer, get_spectral_features
+
 
 def combine_samples():
     def _combine_samples(source):
@@ -34,6 +36,7 @@ class AudioAnalysisService:
 
         self.bpm_detector = BPMDetector(sample_rate=sample_rate)
         self.key_finder = KeyFinder(sample_rate=sample_rate)
+        self.spectral_analyzer = SpectralAnalyzer(sample_rate=sample_rate)
 
         self.buffered_sample_source = self.sample_source.pipe(
             ops.subscribe_on(self.scheduler),
@@ -42,6 +45,7 @@ class AudioAnalysisService:
 
         self._bpm_source = None
         self._key_source = None
+        self._spectral_feature_source = None
 
     @property
     def bpm_source(self):
@@ -62,3 +66,13 @@ class AudioAnalysisService:
                 ops.distinct_until_changed())
 
         return self._key_source
+
+    @property
+    def spectral_feature_source(self):
+        if not self._spectral_feature_source:
+            self._spectral_feature_source = self.buffered_sample_source.pipe(
+                ops.subscribe_on(self.scheduler),
+                get_spectral_features(self.spectral_analyzer),
+                ops.distinct_until_changed())
+
+        return self._spectral_feature_source
